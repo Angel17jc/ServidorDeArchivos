@@ -1,0 +1,18 @@
+{
+  "name": "l5-file-server",
+  "version": "1.0.0",
+  "description": "Nodo L5 - Servidor de archivos (Arquitectura de 5 nodos)",
+  "main": "src/server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2"
+  }
+}

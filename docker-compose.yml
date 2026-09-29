@@ -1,0 +1,64 @@
+# Nodo L5 - Servidor de archivos (192.168.10.15)
+# Uso:            docker compose up -d --build
+# Con pruebas:    docker compose --profile pruebas up -d --build
+name: nodo-l5
+
+services:
+  l5-files:
+    build: ./l5-file-server
+    image: proyecto/l5-file-server:1.0
+    container_name: l5-files
+    hostname: l5-files
+    restart: unless-stopped
+    environment:
+      PORT: 8080
+      FILES_API_KEY: ${FILES_API_KEY:-}
+      MAX_FILE_SIZE_MB: ${MAX_FILE_SIZE_MB:-10}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://192.168.10.11/files}
+    ports:
+      - "${L5_HOST_PORT:-8080}:8080"   # acceso desde otros computadores: http://IP_DEL_ANFITRION:8080
+    volumes:
+      - l5_storage:/srv/storage
+    networks:
+      red_nodos:
+        ipv4_address: 192.168.10.15
+
+  # Clientes de prueba que simulan L3 (backend) y L1 (NGINX) para generar evidencias
+  # cuando esos nodos aún no están disponibles. Solo se levantan con --profile pruebas.
+  l3-sim:
+    image: proyecto/l5-file-server:1.0
+    container_name: l3-sim
+    hostname: l3-backend-sim
+    profiles: ["pruebas"]
+    entrypoint: ["sleep", "infinity"]
+    healthcheck:
+      disable: true
+    depends_on: [l5-files]
+    networks:
+      red_nodos:
+        ipv4_address: 192.168.10.13
+
+  l1-sim:
+    image: proyecto/l5-file-server:1.0
+    container_name: l1-sim
+    hostname: l1-nginx-sim
+    profiles: ["pruebas"]
+    entrypoint: ["sleep", "infinity"]
+    healthcheck:
+      disable: true
+    depends_on: [l5-files]
+    networks:
+      red_nodos:
+        ipv4_address: 192.168.10.11
+
+volumes:
+  l5_storage:
+
+networks:
+  red_nodos:
+    name: red_nodos
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.10.0/24
+          gateway: 192.168.10.1
