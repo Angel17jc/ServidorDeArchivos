@@ -7,6 +7,16 @@ FILES_SERVICE_URL=http://192.168.10.15:8080   # o http://IP_LAN_DEL_EQUIPO_L5:80
 FILES_API_KEY=la-misma-clave-que-en-L5
 ```
 
+## Formato acordado con L3 (Antonio)
+
+```http
+POST /upload            multipart/form-data, campo "file", cabecera x-api-key
+→ 201 { "storage_key": "<uuid>.png", "url": "/files/<uuid>.png", "original_name": "...", "mime_type": "image/png", "size": 48213 }
+
+GET /files/<uuid>.png   → la imagen (NGINX enruta /files/ hacia L5)
+GET /                   → 200 (comprobación de que L5 está en línea)
+```
+
 ## Flujo de carga (sección 6.3 del documento de arquitectura)
 
 1. El cliente envía `multipart/form-data` a `POST /api/files` (L1 → L3).
@@ -26,21 +36,14 @@ FILES_API_KEY=la-misma-clave-que-en-L5
 5. L3 guarda los metadatos en L4. Si falla el guardado, debe llamar a `DELETE /files/{storage_key}` para no dejar archivos huérfanos.
 6. L3 responde al cliente por L1.
 
-## Tabla sugerida en L4 (PostgreSQL)
+## Modelo de datos en L4 (PostgreSQL)
 
-```sql
-CREATE TABLE files (
-  id            SERIAL PRIMARY KEY,
-  storage_key   VARCHAR(255) NOT NULL UNIQUE,
-  original_name VARCHAR(255) NOT NULL,
-  mime_type     VARCHAR(100) NOT NULL,
-  size          INTEGER      NOT NULL,
-  entity_type   VARCHAR(50),          -- 'product', 'payment', 'user', ...
-  entity_id     INTEGER,
-  uploaded_by   INTEGER,              -- id del usuario
-  created_at    TIMESTAMP    NOT NULL DEFAULT NOW()
-);
-```
+Los metadatos van en el schema `storage` (tabla `storage.files`), y cada dominio los referencia con claves foráneas reales:
+
+- [db/01-schema-storage.sql](db/01-schema-storage.sql): crea el schema `storage`, la tabla `storage.files` y sus permisos.
+- [db/02-relaciones-storage.sql](db/02-relaciones-storage.sql): crea `catalog.product_images`, `sales.payments.receipt_file_id` y `messaging.message_attachments`.
+
+En TypeORM, la entidad del módulo `files` se declara con `@Entity({ schema: 'storage', name: 'files' })`.
 
 ## Ejemplo en el servicio de NestJS (Node 18+, sin librerías extra)
 

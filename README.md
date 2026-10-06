@@ -27,6 +27,10 @@ docker compose --profile pruebas down            # detener (los archivos se cons
 | Método | Ruta | Quién la usa | Clave `x-api-key` | Respuesta |
 |---|---|---|---|---|
 | GET | `/health` | Cualquiera / L1 | No | `200 {status:"ok", node:"L5", ...}` |
+| GET | `/` | L3 (comprobar que L5 está en línea) | No | `200` con la lista de endpoints |
+| POST | `/upload` | L3 (**formato acordado con el backend**) | **Sí** | `201 {storage_key: "<uuid>.png", url: "/files/<uuid>.png", ...}` |
+| GET | `/files/<archivo>` | L1 y L3 | No | El archivo binario |
+| DELETE | `/files/<archivo>` | L3 | **Sí** | `204` |
 | POST | `/files?folder=<carpeta>` | L3 | **Sí** | `201 {storage_key, url, original_name, mime_type, size}` |
 | GET | `/files/<carpeta>/<archivo>` | L1 y L3 | No | El archivo binario |
 | DELETE | `/files/<carpeta>/<archivo>` | L3 | **Sí** | `204` |
