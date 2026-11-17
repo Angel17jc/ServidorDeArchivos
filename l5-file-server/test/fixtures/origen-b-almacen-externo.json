@@ -1,0 +1,12 @@
+{
+  "Bucket": "tienda-archivos",
+  "Key": "productos/8f14e45f-ceea-4e7a-9a0b-1f3c2b9d0a11.jpg",
+  "ContentType": "IMAGE/JPEG; charset=binary",
+  "ContentLength": "48213",
+  "ETag": "\"9b2cf535f27731c974343645a3985328\"",
+  "LastModified": "Tue, 17 Nov 2026 15:30:00 GMT",
+  "Location": "http://almacen-externo.test:9000/tienda-archivos/productos/8f14e45f-ceea-4e7a-9a0b-1f3c2b9d0a11.jpg",
+  "Metadata": {
+    "nombre-original": "camisa%20azul.jpg"
+  }
+}

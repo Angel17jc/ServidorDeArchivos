@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { NormalizadorArchivos, ErrorValidacion } = require('./services/NormalizadorArchivos');
 
 const PORT = Number(process.env.PORT) || 8080;
 const HOST = process.env.HOST || '0.0.0.0'; // escuchar en todas las interfaces, no solo en localhost
@@ -95,22 +96,34 @@ function resolveKey(folder, name) {
   return path.join(STORAGE_DIR, folder, name);
 }
 
-const upload = multer({
-  dest: TMP_DIR,
-  limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024, files: 1 },
-  fileFilter: (req, file, cb) => {
-    if (MIME_TYPES[file.mimetype]) return cb(null, true);
-    const err = new Error(`Tipo de archivo no permitido: ${file.mimetype}`);
-    err.status = 415;
-    cb(err);
-  },
+function fileFilter(req, file, cb) {
+  if (MIME_TYPES[file.mimetype]) return cb(null, true);
+  const err = new Error(`Tipo de archivo no permitido: ${file.mimetype}`);
+  err.status = 415;
+  cb(err);
+}
+const limits = { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024, files: 1 };
+
+const upload = multer({ dest: TMP_DIR, limits, fileFilter });
+
+// POST /upload guarda directamente con el nombre definitivo <uuid>.<ext>
+const uploadLocal = multer({
+  storage: multer.diskStorage({
+    destination: STORAGE_DIR,
+    filename: (req, file, cb) => cb(null, crypto.randomUUID() + MIME_TYPES[file.mimetype]),
+  }),
+  limits,
+  fileFilter,
 });
+
+// Traductor al contrato común que consume el backend (L3)
+const normalizador = new NormalizadorArchivos({ limiteBytes: limits.fileSize });
 
 app.get('/', (req, res) => {
   res.json({
     node: 'L5',
     service: 'file-server',
-    endpoints: ['GET /health', 'GET /panel', 'POST /upload', 'GET /files/:name', 'DELETE /files/:name', 'POST /files', 'GET /files/:folder/:name', 'DELETE /files/:folder/:name'],
+    endpoints: ['GET /health', 'GET /panel', 'POST /upload', 'POST /integraciones/almacen-externo', 'GET /files/:name', 'DELETE /files/:name', 'POST /files', 'GET /files/:folder/:name', 'DELETE /files/:folder/:name'],
   });
 });
 
@@ -202,24 +215,17 @@ En Docker Desktop, las conexiones que llegan desde otros equipos por el puerto p
 });
 
 // Carga en el formato acordado con L3: multipart/form-data, campo "file".
-// Responde { storage_key: "<uuid>.png", url: "/files/<uuid>.png" }; NGINX (L1) enruta /files/ hacia L5.
-app.post('/upload', requireApiKey, upload.single('file'), async (req, res, next) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: 'Falta el campo "file"' });
+// Origen A: el descriptor de Multer se traduce al contrato común
+// { storage_key, url, original_name, mime_type, size }; NGINX (L1) enruta /files/ hacia L5.
+app.post('/upload', requireApiKey, uploadLocal.single('file'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Falta el campo "file"' });
+  res.status(201).json(normalizador.desdeAlmacenLocal(req.file));
+});
 
-    const name = crypto.randomUUID() + MIME_TYPES[req.file.mimetype];
-    await fs.promises.rename(req.file.path, path.join(STORAGE_DIR, name));
-
-    res.status(201).json({
-      storage_key: name,
-      url: `/files/${name}`,
-      original_name: req.file.originalname,
-      mime_type: req.file.mimetype,
-      size: req.file.size,
-    });
-  } catch (err) {
-    next(err);
-  }
+// Origen B: metadatos de un objeto del servicio de almacenamiento externo (simulado, formato S3/MinIO).
+// Devuelve el mismo contrato común que POST /upload, para que L3 lo registre sin cambios.
+app.post('/integraciones/almacen-externo', requireApiKey, express.json({ limit: '20kb' }), (req, res) => {
+  res.json(normalizador.desdeAlmacenExterno(req.body));
 });
 
 // Carga: multipart/form-data con el campo "file"; carpeta opcional por ?folder= o campo "folder"
@@ -273,6 +279,12 @@ app.use((req, res) => res.status(404).json({ error: 'Ruta no encontrada' }));
 
 app.use((err, req, res, next) => {
   if (req.file) fs.promises.rm(req.file.path, { force: true }).catch(() => {});
+  if (err instanceof ErrorValidacion) {
+    return res.status(422).json({ error: 'Entrada no válida para el contrato común', origen: err.origen, detalles: err.detalles });
+  }
+  if (err.type === 'entity.parse.failed') {
+    return res.status(400).json({ error: 'El cuerpo no es un JSON válido' });
+  }
   if (err instanceof multer.MulterError) {
     const status = err.code === 'LIMIT_FILE_SIZE' ? 413 : 400;
     return res.status(status).json({ error: err.code === 'LIMIT_FILE_SIZE' ? `El archivo supera ${MAX_FILE_SIZE_MB} MB` : err.message });
@@ -281,7 +293,11 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ error: err.status ? err.message : 'Error interno del servidor' });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`[L5] Servidor de archivos escuchando en http://${HOST}:${PORT}`);
-  console.log(`[L5] Almacenamiento: ${STORAGE_DIR} | Máx: ${MAX_FILE_SIZE_MB} MB | API key: ${API_KEY ? 'activada' : 'DESACTIVADA'}`);
-});
+if (require.main === module) {
+  app.listen(PORT, HOST, () => {
+    console.log(`[L5] Servidor de archivos escuchando en http://${HOST}:${PORT}`);
+    console.log(`[L5] Almacenamiento: ${STORAGE_DIR} | Máx: ${MAX_FILE_SIZE_MB} MB | API key: ${API_KEY ? 'activada' : 'DESACTIVADA'}`);
+  });
+}
+
+module.exports = app;
