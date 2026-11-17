@@ -29,6 +29,7 @@ docker compose --profile pruebas down            # detener (los archivos se cons
 | GET | `/health` | Cualquiera / L1 | No | `200 {status:"ok", node:"L5", ...}` |
 | GET | `/` | L3 (comprobar que L5 está en línea) | No | `200` con la lista de endpoints |
 | POST | `/upload` | L3 (**formato acordado con el backend**) | **Sí** | `201 {storage_key: "<uuid>.png", url: "/files/<uuid>.png", ...}` |
+| POST | `/integraciones/almacen-externo` | Almacenamiento externo (simulado, formato S3/MinIO) | **Sí** | `200` con el mismo contrato que `/upload`, o `422` con el detalle de cada error |
 | GET | `/files/<archivo>` | L1 y L3 | No | El archivo binario |
 | DELETE | `/files/<archivo>` | L3 | **Sí** | `204` |
 | POST | `/files?folder=<carpeta>` | L3 | **Sí** | `201 {storage_key, url, original_name, mime_type, size}` |
@@ -41,6 +42,22 @@ docker compose --profile pruebas down            # detener (los archivos se cons
 - Los metadatos (nombre original, tamaño, a qué producto o pago pertenece) **los guarda L3 en L4**; L5 solo guarda el archivo.
 
 Contrato para L3 y configuración de NGINX para L1: ver [docs/](docs/).
+
+## Traductor al contrato común (IS-803, tema 2.3)
+
+[NormalizadorArchivos](l5-file-server/src/services/NormalizadorArchivos.js) traduce dos estructuras que describen el mismo archivo al contrato que consume L3 (`storage_key`, `url`, `original_name`, `mime_type`, `size`):
+
+- **Origen A:** el descriptor de Multer al guardar en el disco de L5 (`POST /upload`).
+- **Origen B:** los metadatos de un almacenamiento externo con formato S3/MinIO (`POST /integraciones/almacen-externo`).
+
+Las entradas inválidas o ambiguas se rechazan con `ErrorValidacion` (HTTP 422), sin conversiones silenciosas.
+
+```bash
+cd l5-file-server && npm install && npm test        # 26 pruebas: P1, P2, P3 y casos de error
+powershell -ExecutionPolicy Bypass -File .\evidencias-tema-2-3.ps1   # evidencias contra el L5 en Docker
+```
+
+Desarrollo de la guía: [docs/tema-2-3/](docs/tema-2-3/).
 
 ## Evidencias para la guía (IS-803, tema 1.4)
 
