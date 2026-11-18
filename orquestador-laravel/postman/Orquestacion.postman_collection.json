@@ -1,0 +1,310 @@
+{
+  "info": {
+    "_postman_id": "59cb2f92-9acf-440c-9e15-0fe97133a875",
+    "name": "Orquestación · Nodo L5 (IS-803)",
+    "description": "Orquestador Laravel: GET /api/resumen-solicitud/101 consulta usuarios y estados y compone una respuesta unificada.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "orquestador",
+      "value": "http://127.0.0.1:8000"
+    },
+    {
+      "key": "usuarios",
+      "value": "http://127.0.0.1:8001"
+    },
+    {
+      "key": "estados",
+      "value": "http://127.0.0.1:8002"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Servicios de prueba",
+      "item": [
+        {
+          "name": "Usuarios · GET /usuarios/7",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{usuarios}}/usuarios/7",
+              "host": [
+                "{{usuarios}}"
+              ],
+              "path": [
+                "usuarios",
+                "7"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estados · GET /estados/101",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{estados}}/estados/101",
+              "host": [
+                "{{estados}}"
+              ],
+              "path": [
+                "estados",
+                "101"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Orquestador",
+      "item": [
+        {
+          "name": "Flujo normal (propaga clase-101)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "clase-101"
+              }
+            ],
+            "url": {
+              "raw": "{{orquestador}}/api/resumen-solicitud/101",
+              "host": [
+                "{{orquestador}}"
+              ],
+              "path": [
+                "api",
+                "resumen-solicitud",
+                "101"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('correlation_id = clase-101', () => pm.expect(pm.response.json().correlation_id).to.eql('clase-101'));",
+                  "pm.test('Cabecera X-Correlation-ID = clase-101', () => pm.response.to.have.header('X-Correlation-ID', 'clase-101'));",
+                  "pm.test('Respuesta unificada', () => { const j = pm.response.json(); pm.expect(j.solicitud_id).to.eql(101); pm.expect(j.usuario).to.eql({id: 7, nombre: 'Ana'}); pm.expect(j.estado).to.eql({solicitud_id: 101, estado: 'pendiente'}); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin cabecera (genera UUID)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{orquestador}}/api/resumen-solicitud/101",
+              "host": [
+                "{{orquestador}}"
+              ],
+              "path": [
+                "api",
+                "resumen-solicitud",
+                "101"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('correlation_id es un UUID generado', () => pm.expect(pm.response.json().correlation_id).to.match(/^[0-9a-f-]{36}$/));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fallo: servicio detenido (Ctrl+C en estados)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "clase-101"
+              }
+            ],
+            "url": {
+              "raw": "{{orquestador}}/api/resumen-solicitud/101",
+              "host": [
+                "{{orquestador}}"
+              ],
+              "path": [
+                "api",
+                "resumen-solicitud",
+                "101"
+              ]
+            },
+            "description": "Antes de enviar, detén el servicio de estados con Ctrl+C en su ventana."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 502', () => pm.response.to.have.status(502));",
+                  "pm.test('Mensaje controlado', () => pm.expect(pm.response.json().error).to.eql('Dependencia no disponible'));",
+                  "pm.test('Sin trazas', () => pm.expect(Object.keys(pm.response.json())).to.eql(['error', 'correlation_id']));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('clase-101'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fallo: solicitud inexistente 999 (estados 404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "clase-999"
+              }
+            ],
+            "url": {
+              "raw": "{{orquestador}}/api/resumen-solicitud/999",
+              "host": [
+                "{{orquestador}}"
+              ],
+              "path": [
+                "api",
+                "resumen-solicitud",
+                "999"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 502', () => pm.response.to.have.status(502));",
+                  "pm.test('Mensaje controlado', () => pm.expect(pm.response.json().error).to.eql('Dependencia no disponible'));",
+                  "pm.test('Sin trazas', () => pm.expect(Object.keys(pm.response.json())).to.eql(['error', 'correlation_id']));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('clase-999'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Adaptación al proyecto (catálogo + Nodo L5)",
+      "item": [
+        {
+          "name": "Resumen de producto 15",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "tienda-15"
+              }
+            ],
+            "url": {
+              "raw": "{{orquestador}}/api/resumen-producto/15",
+              "host": [
+                "{{orquestador}}"
+              ],
+              "path": [
+                "api",
+                "resumen-producto",
+                "15"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('correlation_id = tienda-15', () => pm.expect(pm.response.json().correlation_id).to.eql('tienda-15'));",
+                  "pm.test('Cabecera X-Correlation-ID = tienda-15', () => pm.response.to.have.header('X-Correlation-ID', 'tienda-15'));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
