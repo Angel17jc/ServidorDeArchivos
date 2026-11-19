@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Documento PDF de entrega: se genera localmente y no se sube al repositorio
+/docs/entrega/*.pdf
