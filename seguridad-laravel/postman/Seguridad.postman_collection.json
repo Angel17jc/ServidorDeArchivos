@@ -11,7 +11,7 @@
       "value": "http://127.0.0.1:8100"
     },
     {
-      "key": "token_ana",
+      "key": "token_angel",
       "value": ""
     },
     {
@@ -32,7 +32,7 @@
       "name": "0. Iniciar sesión (no capturar)",
       "item": [
         {
-          "name": "Login · Ana (cliente)",
+          "name": "Login · Angel (cliente)",
           "request": {
             "method": "POST",
             "header": [
@@ -61,7 +61,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{email_ana}}\",\n  \"password\": \"{{password_ana}}\"\n}"
+              "raw": "{\n  \"email\": \"{{email_angel}}\",\n  \"password\": \"{{password_angel}}\"\n}"
             }
           },
           "event": [
@@ -71,7 +71,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "pm.collectionVariables.set('token_ana', pm.response.json().token); // el token queda en una variable, no se escribe en ningún lado"
+                  "pm.collectionVariables.set('token_angel', pm.response.json().token); // el token queda en una variable, no se escribe en ningún lado"
                 ]
               }
             }
@@ -129,7 +129,7 @@
       "name": "P1 · Acceso permitido (2xx)",
       "item": [
         {
-          "name": "Ana · GET /api/archivos (solo los suyos)",
+          "name": "Angel · GET /api/archivos (solo los suyos)",
           "request": {
             "method": "GET",
             "header": [
@@ -154,7 +154,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token_ana}}",
+                  "value": "{{token_angel}}",
                   "type": "string"
                 }
               ]
@@ -167,7 +167,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Todos los archivos son de Ana', () => pm.response.json().forEach(a => pm.expect(a.propietario.nombre).to.eql('Ana López')));"
+                  "pm.test('Todos los archivos son de Angel', () => pm.response.json().forEach(a => pm.expect(a.propietario.nombre).to.eql('Angel Conforme')));"
                 ]
               }
             }
@@ -219,7 +219,7 @@
           ]
         },
         {
-          "name": "Ana · POST /api/archivos (sube a L5)",
+          "name": "Angel · POST /api/archivos (sube a L5)",
           "request": {
             "method": "POST",
             "header": [
@@ -244,7 +244,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token_ana}}",
+                  "value": "{{token_angel}}",
                   "type": "string"
                 }
               ]
@@ -267,7 +267,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('HTTP 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Ana queda como propietaria', () => pm.expect(pm.response.json().propietario.nombre).to.eql('Ana López'));",
+                  "pm.test('Angel queda como propietario', () => pm.expect(pm.response.json().propietario.nombre).to.eql('Angel Conforme'));",
                   "pm.collectionVariables.set('id_archivo_nuevo', pm.response.json().id);"
                 ]
               }
@@ -323,7 +323,7 @@
       "name": "P3 · Autenticado sin permisos (403)",
       "item": [
         {
-          "name": "Ana · GET archivo de Luis",
+          "name": "Angel · GET archivo de Luis",
           "request": {
             "method": "GET",
             "header": [
@@ -349,7 +349,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token_ana}}",
+                  "value": "{{token_angel}}",
                   "type": "string"
                 }
               ]
@@ -369,7 +369,7 @@
           ]
         },
         {
-          "name": "Ana · DELETE (solo administrador)",
+          "name": "Angel · DELETE (solo administrador)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -395,7 +395,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{token_ana}}",
+                  "value": "{{token_angel}}",
                   "type": "string"
                 }
               ]

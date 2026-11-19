@@ -27,12 +27,12 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        [$ana, $luis] = array_values(array_filter($usuarios, fn (User $u) => $u->rol === User::ROL_CLIENTE));
+        [$angel, $luis] = array_values(array_filter($usuarios, fn (User $u) => $u->rol === User::ROL_CLIENTE));
 
-        // Archivos ficticios: dos de Ana y uno de Luis (claves con el formato de L5)
+        // Archivos ficticios: dos de Angel y uno de Luis (claves con el formato de L5)
         $archivos = [
-            [$ana, 'camisa-azul.jpg', '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed.jpg', 'image/jpeg', 48213],
-            [$ana, 'comprobante-pedido-1001.pdf', '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b.pdf', 'application/pdf', 91544],
+            [$angel, 'camisa-azul.jpg', '1b9d6bcd-bbfd-4b2d-9b5d-ab8dfbbd4bed.jpg', 'image/jpeg', 48213],
+            [$angel, 'comprobante-pedido-1001.pdf', '6ec0bd7f-11c0-43da-975e-2a8ad9ebae0b.pdf', 'application/pdf', 91544],
             [$luis, 'zapatos-cafe.png', 'c9bf9e57-1685-4c89-bafb-ff5af830be8a.png', 'image/png', 120330],
         ];
         foreach ($archivos as [$propietario, $nombre, $clave, $tipo, $tamano]) {

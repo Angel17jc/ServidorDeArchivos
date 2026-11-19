@@ -58,7 +58,7 @@ Solo se documentan los **nombres**. Los valores están únicamente en `.env`, qu
 | `L5_FILES_API_KEY` | Credencial de servicio para subir y borrar en L5 |
 | `L5_TIMEOUT` | Segundos máximos de espera a L5 |
 | `SANCTUM_EXPIRATION` | Minutos de vida de cada token (120) |
-| `DEMO_CLIENTE_EMAIL`, `DEMO_CLIENTE_PASSWORD` | Usuaria de demostración Ana (cliente) |
+| `DEMO_CLIENTE_EMAIL`, `DEMO_CLIENTE_PASSWORD` | Usuario de demostración Angel (cliente) |
 | `DEMO_CLIENTE2_EMAIL`, `DEMO_CLIENTE2_PASSWORD` | Usuario de demostración Luis (cliente) |
 | `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` | Administrador de demostración |
 
@@ -98,8 +98,8 @@ php artisan test     # 20 pruebas: 18 de seguridad y 2 de ejemplo de Laravel
 ### Manuales en Postman
 
 1. Importa [postman/Seguridad.postman_collection.json](postman/Seguridad.postman_collection.json).
-2. Crea un *environment* con `email_ana`, `password_ana`, `email_admin` y `password_admin`, o importa `postman/local.postman_environment.json`. Ese archivo se genera en tu equipo y Git lo ignora.
-3. Ejecuta las peticiones de la carpeta **0. Iniciar sesión**. Los tokens quedan en variables (`{{token_ana}}`, `{{token_admin}}`). No captures esas respuestas: contienen el token.
+2. Crea un *environment* con `email_angel`, `password_angel`, `email_admin` y `password_admin`, o importa `postman/local.postman_environment.json`. Ese archivo se genera en tu equipo y Git lo ignora.
+3. Ejecuta las peticiones de la carpeta **0. Iniciar sesión**. Los tokens quedan en variables (`{{token_angel}}`, `{{token_admin}}`). No captures esas respuestas: contienen el token.
 4. Ejecuta las carpetas **P1**, **P2** y **P3**. Cada petición trae comprobaciones en *Test Results*.
 
 ### P4 · Revisión de secretos

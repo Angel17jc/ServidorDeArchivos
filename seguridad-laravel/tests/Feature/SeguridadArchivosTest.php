@@ -16,13 +16,13 @@ class SeguridadArchivosTest extends TestCase
 {
     use RefreshDatabase;
 
-    private User $ana;
+    private User $angel;
 
     private User $luis;
 
     private User $admin;
 
-    private Archivo $deAna;
+    private Archivo $deAngel;
 
     private Archivo $deLuis;
 
@@ -32,10 +32,10 @@ class SeguridadArchivosTest extends TestCase
         Http::preventStrayRequests();
         config(['services.l5.url' => 'http://l5.test', 'services.l5.key' => 'clave-ficticia-l5']);
 
-        $this->ana = User::factory()->create(['name' => 'Ana']);
+        $this->angel = User::factory()->create(['name' => 'Angel']);
         $this->luis = User::factory()->create(['name' => 'Luis']);
         $this->admin = User::factory()->admin()->create(['name' => 'Admin']);
-        $this->deAna = $this->archivo($this->ana, 'camisa-azul.jpg');
+        $this->deAngel = $this->archivo($this->angel, 'camisa-azul.jpg');
         $this->deLuis = $this->archivo($this->luis, 'zapatos-cafe.png');
     }
 
@@ -56,11 +56,11 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_p1_cliente_consulta_solo_sus_archivos(): void
     {
-        $this->comoToken($this->ana)->getJson('/api/archivos')
+        $this->comoToken($this->angel)->getJson('/api/archivos')
             ->assertOk()
             ->assertJsonCount(1)
             ->assertJsonPath('0.nombre_original', 'camisa-azul.jpg')
-            ->assertJsonPath('0.propietario.id', $this->ana->id);
+            ->assertJsonPath('0.propietario.id', $this->angel->id);
     }
 
     public function test_p1_administrador_consulta_todos_los_archivos(): void
@@ -70,21 +70,21 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_p1_cliente_consulta_un_archivo_propio(): void
     {
-        $this->comoToken($this->ana)->getJson("/api/archivos/{$this->deAna->id}")->assertOk()->assertJsonPath('id', $this->deAna->id);
+        $this->comoToken($this->angel)->getJson("/api/archivos/{$this->deAngel->id}")->assertOk()->assertJsonPath('id', $this->deAngel->id);
     }
 
     public function test_p1_cliente_sube_un_archivo_y_queda_como_propietario(): void
     {
         Http::fake(['l5.test/upload' => Http::response(['storage_key' => '0f8fad5b-d9cb-469f-a165-70867728950e.png', 'url' => '/files/x', 'mime_type' => 'image/png', 'size' => 70], 201)]);
 
-        $this->comoToken($this->ana)
+        $this->comoToken($this->angel)
             ->post('/api/archivos', ['file' => UploadedFile::fake()->image('foto.png'), 'user_id' => $this->luis->id], ['Accept' => 'application/json'])
             ->assertCreated()
-            ->assertJsonPath('propietario.id', $this->ana->id); // ignora el user_id enviado por el cliente
+            ->assertJsonPath('propietario.id', $this->angel->id); // ignora el user_id enviado por el cliente
 
         // Laravel se identificó ante L5 con la clave de servicio de la configuración
         Http::assertSent(fn (PeticionHttp $r) => $r->url() === 'http://l5.test/upload' && $r->hasHeader('x-api-key', 'clave-ficticia-l5'));
-        $this->assertDatabaseHas('archivos', ['storage_key' => '0f8fad5b-d9cb-469f-a165-70867728950e.png', 'user_id' => $this->ana->id]);
+        $this->assertDatabaseHas('archivos', ['storage_key' => '0f8fad5b-d9cb-469f-a165-70867728950e.png', 'user_id' => $this->angel->id]);
     }
 
     public function test_p1_administrador_elimina_un_archivo(): void
@@ -101,7 +101,7 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_p2_sin_token_todas_las_rutas_protegidas_responden_401(): void
     {
-        foreach ([['get', '/api/archivos'], ['get', "/api/archivos/{$this->deAna->id}"], ['post', '/api/archivos'], ['delete', "/api/archivos/{$this->deAna->id}"], ['get', '/api/me']] as [$metodo, $ruta]) {
+        foreach ([['get', '/api/archivos'], ['get', "/api/archivos/{$this->deAngel->id}"], ['post', '/api/archivos'], ['delete', "/api/archivos/{$this->deAngel->id}"], ['get', '/api/me']] as [$metodo, $ruta]) {
             $this->json($metodo, $ruta)->assertUnauthorized()->assertJsonPath('error', 'No autenticado');
         }
     }
@@ -113,7 +113,7 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_p2_token_revocado_con_logout_deja_de_funcionar(): void
     {
-        $token = $this->ana->createToken('pruebas')->plainTextToken;
+        $token = $this->angel->createToken('pruebas')->plainTextToken;
 
         $this->withToken($token)->postJson('/api/logout')->assertNoContent();
         $this->app['auth']->forgetGuards();
@@ -122,7 +122,7 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_p2_token_vencido_responde_401(): void
     {
-        $token = $this->ana->createToken('pruebas', ['*'], now()->subMinute())->plainTextToken;
+        $token = $this->angel->createToken('pruebas', ['*'], now()->subMinute())->plainTextToken;
 
         $this->withToken($token)->getJson('/api/archivos')->assertUnauthorized();
     }
@@ -131,16 +131,16 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_p3_cliente_no_puede_consultar_un_archivo_ajeno(): void
     {
-        $this->comoToken($this->ana)->getJson("/api/archivos/{$this->deLuis->id}")
+        $this->comoToken($this->angel)->getJson("/api/archivos/{$this->deLuis->id}")
             ->assertForbidden()
             ->assertJsonPath('error', 'Acceso denegado');
     }
 
     public function test_p3_cliente_no_puede_eliminar_archivos(): void
     {
-        $this->comoToken($this->ana)->deleteJson("/api/archivos/{$this->deAna->id}")->assertForbidden();
+        $this->comoToken($this->angel)->deleteJson("/api/archivos/{$this->deAngel->id}")->assertForbidden();
 
-        $this->assertDatabaseHas('archivos', ['id' => $this->deAna->id]); // no se borró
+        $this->assertDatabaseHas('archivos', ['id' => $this->deAngel->id]); // no se borró
         Http::assertNothingSent(); // ni siquiera se contactó a L5
     }
 
@@ -148,9 +148,9 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_login_valido_entrega_un_token_bearer_sin_datos_sensibles(): void
     {
-        $usuario = User::factory()->create(['email' => 'ana@tienda.test', 'password' => 'clave-de-prueba-123']);
+        $usuario = User::factory()->create(['email' => 'angel@tienda.test', 'password' => 'clave-de-prueba-123']);
 
-        $respuesta = $this->postJson('/api/login', ['email' => 'ana@tienda.test', 'password' => 'clave-de-prueba-123'])
+        $respuesta = $this->postJson('/api/login', ['email' => 'angel@tienda.test', 'password' => 'clave-de-prueba-123'])
             ->assertOk()
             ->assertJsonPath('tipo', 'Bearer')
             ->assertJsonPath('usuario.rol', 'cliente');
@@ -162,9 +162,9 @@ class SeguridadArchivosTest extends TestCase
     public function test_login_fallido_no_registra_la_contrasena(): void
     {
         Log::spy();
-        User::factory()->create(['email' => 'ana@tienda.test', 'password' => 'clave-correcta-123']);
+        User::factory()->create(['email' => 'angel@tienda.test', 'password' => 'clave-correcta-123']);
 
-        $this->postJson('/api/login', ['email' => 'ana@tienda.test', 'password' => 'Intento-Secreto-999'])
+        $this->postJson('/api/login', ['email' => 'angel@tienda.test', 'password' => 'Intento-Secreto-999'])
             ->assertUnauthorized()
             ->assertExactJson(['error' => 'Credenciales inválidas']);
 
@@ -184,13 +184,13 @@ class SeguridadArchivosTest extends TestCase
     public function test_el_registro_de_accesos_denegados_no_guarda_el_token_completo(): void
     {
         Log::spy();
-        $token = $this->ana->createToken('pruebas')->plainTextToken;
+        $token = $this->angel->createToken('pruebas')->plainTextToken;
 
         $this->withToken($token)->getJson("/api/archivos/{$this->deLuis->id}")->assertForbidden();
 
         $secreto = explode('|', $token, 2)[1];
         Log::shouldHaveReceived('warning')->with('Acceso denegado', Mockery::on(
-            fn (array $c) => $c['estado'] === 403 && $c['usuario_id'] === $this->ana->id
+            fn (array $c) => $c['estado'] === 403 && $c['usuario_id'] === $this->angel->id
                 && str_contains($c['token'], '(oculto)') && ! str_contains(json_encode($c), $secreto)
         ));
     }
@@ -211,7 +211,7 @@ class SeguridadArchivosTest extends TestCase
     {
         Http::fake(['l5.test/upload' => Http::failedConnection()]);
 
-        $this->comoToken($this->ana)
+        $this->comoToken($this->angel)
             ->post('/api/archivos', ['file' => UploadedFile::fake()->image('foto.png')], ['Accept' => 'application/json'])
             ->assertStatus(502)
             ->assertExactJson(['error' => 'Servicio de archivos no disponible']);
@@ -221,7 +221,7 @@ class SeguridadArchivosTest extends TestCase
 
     public function test_la_carga_rechaza_tipos_no_permitidos(): void
     {
-        $this->comoToken($this->ana)
+        $this->comoToken($this->angel)
             ->post('/api/archivos', ['file' => UploadedFile::fake()->create('script.php', 1, 'application/x-php')], ['Accept' => 'application/json'])
             ->assertUnprocessable();
         Http::assertNothingSent();

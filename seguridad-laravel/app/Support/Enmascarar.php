@@ -17,7 +17,7 @@ class Enmascarar
         return $id.'|'.substr($secreto, 0, 4).'…(oculto)';
     }
 
-    /** Correo "ana.lopez@tienda.test" → "a***@tienda.test". */
+    /** Correo "angel.conforme@tienda.test" → "a***@tienda.test". */
     public static function correo(?string $correo): string
     {
         if (! is_string($correo) || ! str_contains($correo, '@')) {
