@@ -86,7 +86,7 @@ powershell -ExecutionPolicy Bypass -File .\iniciar-asincrono.ps1   # abre la API
 
 | Criterio | Síncrono | Asíncrono |
 |---|---|---|
-| Respuesta inicial al cliente | **2,76–2,83 s** (200, con la miniatura) | **0,17–0,26 s** (202, `pendiente`) |
+| Respuesta inicial al cliente | **2,76–2,83 s** con curl; 3,12 s en Postman (200, con la miniatura) | **0,17–0,26 s** con curl; 0,53–0,78 s en Postman (202, `pendiente`) |
 | Fin del trabajo | Al responder | Unos 2,6 s después, en el consumidor |
 | Consumidor detenido | No aplica | 202 igual; 1 mensaje pendiente en la cola; procesado al reiniciar (esperó 6,2 s) |
 | Falla de L5 | El cliente espera y recibe 502 | 202; estado `error`; mensaje en la cola de errores |
