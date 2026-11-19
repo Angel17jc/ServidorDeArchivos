@@ -1,0 +1,22 @@
+# Broker de mensajes para la práctica asíncrona (tema 3.1).
+# Las credenciales salen del .env de esta carpeta (RABBITMQ_USER y RABBITMQ_PASSWORD); nunca se escriben aquí.
+# Uso:  docker compose up -d     ·  panel de administración: http://127.0.0.1:15672
+name: broker-l5
+
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq-l5
+    hostname: rabbitmq-l5
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:?Defina RABBITMQ_USER en .env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Defina RABBITMQ_PASSWORD en .env}
+    ports:
+      - "127.0.0.1:5672:5672"     # AMQP: solo accesible desde este equipo
+      - "127.0.0.1:15672:15672"   # panel web de administración
+    volumes:
+      - rabbitmq_datos:/var/lib/rabbitmq   # las colas durables sobreviven a reinicios
+
+volumes:
+  rabbitmq_datos:

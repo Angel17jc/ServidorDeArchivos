@@ -1,0 +1,538 @@
+{
+  "info": {
+    "_postman_id": "fdd150ab-286f-4f90-9461-50f03f9beae5",
+    "name": "Asíncrono · Miniaturas con RabbitMQ (IS-803 tema 3.1)",
+    "description": "Productor (API Laravel) → cola archivos.miniaturas (RabbitMQ) → consumidor (php artisan miniaturas:consumir).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:8200"
+    },
+    {
+      "key": "msg_101",
+      "value": ""
+    },
+    {
+      "key": "msg_detenido",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Mensaje válido (3 mensajes)",
+      "item": [
+        {
+          "name": "Pedido 101 · miniatura de Camisa azul",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "pedido-101"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 1,\n  \"ancho\": 200\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Estado pendiente: el trabajo aún no terminó', () => pm.expect(pm.response.json().estado).to.eql('pendiente'));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('pedido-101'));",
+                  "pm.collectionVariables.set('msg_101', pm.response.json().message_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pedido 102 · miniatura de Zapatos café",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "pedido-102"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 2,\n  \"ancho\": 200\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Estado pendiente: el trabajo aún no terminó', () => pm.expect(pm.response.json().estado).to.eql('pendiente'));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('pedido-102'));",
+                  "pm.collectionVariables.set('msg_102', pm.response.json().message_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pedido 103 · miniatura de Gorra roja",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "pedido-103"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 3,\n  \"ancho\": 150\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Estado pendiente: el trabajo aún no terminó', () => pm.expect(pm.response.json().estado).to.eql('pendiente'));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('pedido-103'));",
+                  "pm.collectionVariables.set('msg_103', pm.response.json().message_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seguimiento del pedido 101 (por message_id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/procesamientos/{{msg_101}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "procesamientos",
+                "{{msg_101}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2. Consumidor detenido",
+      "item": [
+        {
+          "name": "Publicar con el consumidor detenido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "consumidor-detenido"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "Antes de enviar, detenga el consumidor con Ctrl+C en su ventana.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 2,\n  \"ancho\": 200\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Estado pendiente: el trabajo aún no terminó', () => pm.expect(pm.response.json().estado).to.eql('pendiente'));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('consumidor-detenido'));",
+                  "pm.collectionVariables.set('msg_detenido', pm.response.json().message_id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Seguimiento (pendiente / completado)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/procesamientos/{{msg_detenido}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "procesamientos",
+                "{{msg_detenido}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3. Mensaje inválido",
+      "item": [
+        {
+          "name": "Sin imagen_id",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ancho\": 200\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Error en imagen_id', () => pm.expect(pm.response.json().errors).to.have.property('imagen_id'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Imagen inexistente, ancho y correlation_id inválidos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 999,\n  \"ancho\": 20,\n  \"correlation_id\": \"<script>\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Tres reglas incumplidas', () => pm.expect(Object.keys(pm.response.json().errors)).to.have.members(['imagen_id', 'ancho', 'correlation_id']));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4. Correlación",
+      "item": [
+        {
+          "name": "Todos los registros de pedido-101",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/procesamientos?correlation_id=pedido-101",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "procesamientos"
+              ],
+              "query": [
+                {
+                  "key": "correlation_id",
+                  "value": "pedido-101"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5. Comparación síncrono / asíncrono",
+      "item": [
+        {
+          "name": "Síncrono · el cliente espera la miniatura",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "comparacion-sincrono"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas/sincrono",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas",
+                "sincrono"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 1,\n  \"ancho\": 200\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Ya completado al responder', () => pm.expect(pm.response.json().estado).to.eql('completado'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Asíncrono · respuesta inmediata",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Correlation-ID",
+                "value": "comparacion-asincrono"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/miniaturas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "miniaturas"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imagen_id\": 1,\n  \"ancho\": 200\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTTP 202', () => pm.response.to.have.status(202));",
+                  "pm.test('Estado pendiente: el trabajo aún no terminó', () => pm.expect(pm.response.json().estado).to.eql('pendiente'));",
+                  "pm.test('Conserva el correlation_id', () => pm.expect(pm.response.json().correlation_id).to.eql('comparacion-asincrono'));",
+                  "pm.collectionVariables.set('msg_comparacion', pm.response.json().message_id);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
