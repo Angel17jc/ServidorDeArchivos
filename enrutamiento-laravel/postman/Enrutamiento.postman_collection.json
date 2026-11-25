@@ -1,0 +1,379 @@
+{
+    "info": {
+        "name": "Enrutamiento de eventos · L5 · tema 3.2",
+        "description": "Práctica IS-803 tema 3.2: Content-Based Router y Message Filter sobre los eventos de archivos del Nodo L5. Ejecute antes `php artisan demo:preparar` para cargar las claves de los archivos de prueba en las variables de la colección.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Caso 1 · Imagen de producto → miniaturas",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3001\",\n  \"tipo\": \"imagen_producto\",\n  \"prioridad\": \"normal\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"producto-301\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_imagen}}\",\n    \"tamano_bytes\": {{tamano_imagen}},\n    \"referencia\": \"PROD-301\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Regla R1: tipo imagen_producto con archivo de imagen. Esperado: 202, destino miniaturas; solo el consumidor de miniaturas lo recibe."
+            }
+        },
+        {
+            "name": "Caso 2 · Comprobante de pago → comprobantes",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3002\",\n  \"tipo\": \"comprobante_pago\",\n  \"prioridad\": \"alta\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"pedido-1002\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_comprobante}}\",\n    \"tamano_bytes\": {{tamano_comprobante}},\n    \"referencia\": \"PED-1002\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Regla R2: tipo comprobante_pago con PDF. Esperado: 202, destino comprobantes, prioridad AMQP 9."
+            }
+        },
+        {
+            "name": "Caso 3 · Archivo eliminado → limpieza",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3003\",\n  \"tipo\": \"archivo_eliminado\",\n  \"prioridad\": \"baja\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"producto-120\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_eliminar}}\",\n    \"tamano_bytes\": {{tamano_eliminar}},\n    \"referencia\": \"PROD-120\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Regla R3: tipo archivo_eliminado. Esperado: 202, destino limpieza; el consumidor borra el archivo en L5."
+            }
+        },
+        {
+            "name": "Caso 4 · Tipo desconocido → no_enrutables",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3004\",\n  \"tipo\": \"factura_proveedor\",\n  \"prioridad\": \"normal\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"proveedor-77\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_comprobante}}\",\n    \"tamano_bytes\": {{tamano_comprobante}},\n    \"referencia\": \"FAC-0077\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Regla R4: tipo no reconocido. Esperado: 202, resultado no_enrutable, cola eventos.no_enrutables (revisión manual)."
+            }
+        },
+        {
+            "name": "Caso 5 · Operación cancelada → filtrado",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3005\",\n  \"tipo\": \"comprobante_pago\",\n  \"prioridad\": \"alta\",\n  \"estado\": \"cancelado\",\n  \"correlation_id\": \"pedido-1003\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_comprobante}}\",\n    \"tamano_bytes\": {{tamano_comprobante}},\n    \"referencia\": \"PED-1003\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Filtro F1: estado distinto de confirmado. Esperado: 200, resultado filtrado, publicado false; ningún consumidor lo recibe."
+            }
+        },
+        {
+            "name": "Caso 6 · Falta el campo tipo → 422",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3006\",\n  \"prioridad\": \"normal\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"producto-306\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_imagen}}\",\n    \"tamano_bytes\": {{tamano_imagen}},\n    \"referencia\": \"PROD-306\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Validación: falta un campo obligatorio. Esperado: 422 con el campo que falta; no se filtra ni se enruta."
+            }
+        },
+        {
+            "name": "Extra · Imagen de producto con un PDF → no_enrutables",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3007\",\n  \"tipo\": \"imagen_producto\",\n  \"prioridad\": \"normal\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"producto-307\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_comprobante}}\",\n    \"tamano_bytes\": {{tamano_comprobante}},\n    \"referencia\": \"PROD-307\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Regla R4 por contenido: el tipo es conocido pero el archivo no es una imagen. Esperado: 202, no_enrutable."
+            }
+        },
+        {
+            "name": "Extra · Archivo de 15 MB → filtrado",
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    },
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n  \"id\": \"evt-3008\",\n  \"tipo\": \"imagen_producto\",\n  \"prioridad\": \"normal\",\n  \"estado\": \"confirmado\",\n  \"correlation_id\": \"producto-308\",\n  \"datos\": {\n    \"storage_key\": \"{{clave_imagen}}\",\n    \"tamano_bytes\": 15728640,\n    \"referencia\": \"PROD-308\"\n  }\n}",
+                    "options": {
+                        "raw": {
+                            "language": "json"
+                        }
+                    }
+                },
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Filtro F2: supera el límite de 10 MB. Esperado: 200, resultado filtrado."
+            }
+        },
+        {
+            "name": "Seguimiento · Últimos eventos",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/eventos",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ]
+                },
+                "description": "Últimos 20 mensajes con su decisión y, si se entregaron, el consumidor que los procesó."
+            }
+        },
+        {
+            "name": "Seguimiento · Por correlation_id",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{base_url}}/api/eventos?correlation_id=pedido-1002",
+                    "host": [
+                        "{{base_url}}"
+                    ],
+                    "path": [
+                        "api",
+                        "eventos"
+                    ],
+                    "query": [
+                        {
+                            "key": "correlation_id",
+                            "value": "pedido-1002"
+                        }
+                    ]
+                },
+                "description": "Todos los registros de una operación."
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8300"
+        },
+        {
+            "key": "clave_imagen",
+            "value": "products/5fa804f6-26a7-4b05-a47e-0828ad9642b2.jpg"
+        },
+        {
+            "key": "tamano_imagen",
+            "value": "28307"
+        },
+        {
+            "key": "clave_comprobante",
+            "value": "payments/12480c3d-543e-4ba6-877f-f07b40df8e80.pdf"
+        },
+        {
+            "key": "tamano_comprobante",
+            "value": "927"
+        },
+        {
+            "key": "clave_eliminar",
+            "value": "products/48e18072-25d0-49b9-bb73-bbb33fb19152.jpg"
+        },
+        {
+            "key": "tamano_eliminar",
+            "value": "28157"
+        }
+    ]
+}
